@@ -1,8 +1,4 @@
-# to-be-added
 
-def main():
-    pass
-
-
-if __main__ == '__name__':
-    main()
+class PSPD(object):
+    def __init__(self):
+        pass

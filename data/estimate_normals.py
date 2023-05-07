@@ -1,25 +1,27 @@
 import argparse
 import os
 
+from CGAL.CGAL_Kernel import Point_3
+from CGAL.CGAL_Point_set_3 import Point_set_3
+from CGAL.CGAL_Point_set_processing_3 import *
 import numpy as np
-try:
-    import open3d as o3d
-except ImportError:
-    raise ImportError('`open3d` not installed')
+
+
+SUPPORTED_NORMAL_EST = ['jet', 'pca']
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-knn',
+    parser.add_argument('--k_nearest_neighbors',
                         type=int,
                         default=30,
                         help='number of nearest neighbors to be searched')
-    parser.add_argument('-fnc',
-                        '--fast_normal_computation',
-                        action='store_true',
-                        help='enable the non-iterative normal estimation')
-    parser.add_argument('-s',
-                        '--save',
+    parser.add_argument('--method',
+                        type=str,
+                        default='pca',
+                        choices=SUPPORTED_NORMAL_EST,
+                        help='method for normal estimation')
+    parser.add_argument('--save',
                         action='store_true',
                         help='save estimated normals')
     args = parser.parse_args()
@@ -28,20 +30,31 @@ def parse_args():
 
 def main():
     args = parse_args()
-    knn = args.knn
-    fnc = args.fast_normal_computation
+    knn = args.k_nearest_neighbors
+    method = args.method
     save = args.save
     fname = os.path.join('model', 'head')
-    points = np.loadtxt(fname + '.xyz', delimiter=',')
-    pcd = o3d.geometry.PointCloud()
-    pcd.points = o3d.utility.Vector3dVector(points)
-    pcd.estimate_normals(o3d.geometry.KDTreeSearchParamKNN(knn=knn),
-                         fast_normal_computation=fnc)
-    pcd = pcd.normalize_normals()
-    pcd.orient_normals_consistent_tangent_plane(k=knn)
-    normals = np.asarray(pcd.normals)
+    
+    # point set loading
+    points = Point_set_3(f'{fname}.xyz')
+    
+    # normal estimation
+    if method == 'jet':
+        jet_estimate_normals(points, knn)
+    elif method == 'pca':
+        pca_estimate_normals(points, knn)
+    else:
+        pass
+    
+    # normal orientation (otward pointing normals)
+    mst_orient_normals(points, knn)
+    
     if save:
-        np.savetxt(fname + '.normals', normals, delimiter=',')
+        normals = []
+        for n in points.normals():
+            normals.append([n.x(), n.y(), n.z()])
+        normals = np.array(normals)
+        np.savetxt(f'{fname}.normals', normals)
         print(f'Estimated normals saved to `{fname}.normals`.')
 
 
