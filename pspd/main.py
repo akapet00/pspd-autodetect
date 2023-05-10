@@ -42,12 +42,6 @@ class PSPD(object):
             Triangle mesh contains vertices and triangles represented
             by the indices to the vertices. Optionally, it also
             contains triangle and vertex normals and vertex colors.
-        
-        Returns
-        -------
-        numpy.ndarray
-            The (unit) normals of shape (N, 3), where N is the number of
-            points in the point cloud.
         """
         # add logger
         self.log = logging.getLogger()
@@ -65,16 +59,15 @@ class PSPD(object):
             self.mesh = mesh
         else:
             print('Unrecognized mesh format. Proceeding without mesh')
+            self.mesh = None
 
         # handle normals
-        if normals is None:
-            k = int(2 * np.log(self.size))
-            if k < 5:
-                k = 5
-            elif k > 30:
-                k = 30
-            self.log.info(f'Estimating normals with {k}-nearest neighbors')
-            normals = estimate_normals(points, k, unit=False, orient=True)
+        if (normals is None) & (self.mesh is None):
+            self.log.info(f'Estimating normals...')
+            normals = estimate_normals(points,
+                                       self._k,
+                                       unit=False,
+                                       orient=True)
         self.normals = normals
 
         # handle absorbed or incident power density on the surface
@@ -83,6 +76,13 @@ class PSPD(object):
             self.power_density_n = power_density
         elif power_density.ndim == 2:  # unoriented
             if power_density.shape[1] == 3:
+                if self.normals is None:
+                    self.log.info(f'Estimating normals...')
+                    normals = estimate_normals(points,
+                                               self._k,
+                                               unit=False,
+                                               orient=True)
+                    self.normals = normals
                 self.power_density_n = np.sum(
                     np.real(power_density) * self.normals,
                     axis=1,
@@ -97,7 +97,7 @@ class PSPD(object):
         # dictionary for the results
         self.results = {'query point': [], 
                         'k-neigborhood': [],
-                        'k-mesh': [],
+                        'evaluation surface': [],
                         'surface area': [],
                         'power density': [],
                         'spatially averaged power density': []}
@@ -109,7 +109,16 @@ class PSPD(object):
         return self.__str__()
     
     @property
-    def query_ball_radius(self):
+    def _k(self):
+        k = int(2 * np.log(self.size))
+        if k < 5:
+            k = 5
+        elif k > 30:
+            k = 30
+        return k
+
+    @property
+    def _query_ball_radius(self):
         try:
             a = np.sqrt(self.projected_area)
         except AttributeError as e:
@@ -139,58 +148,111 @@ class PSPD(object):
                 & (nbh[:, 1] >= bbox[2]) & (nbh[:, 1] <= bbox[3])
             )[0]
             return bbox, bbox_ind
+    
+    def _bound_mesh(self, nbh_vert, bbox):
+        bbox_ind = np.where(
+            (nbh_vert[:, 0] >= bbox[0]) & (nbh_vert[:, 0] <= bbox[1])
+            & (nbh_vert[:, 1] >= bbox[2]) & (nbh_vert[:, 1] <= bbox[3])
+        )[0]
+        return bbox_ind
 
-    def _step(self):
-        pass
+    def _estimate_surf_area(self, domain):
+        if isinstance(domain, np.ndarray):
+            area = self.projected_area  # to be implemented
+        elif isinstance(domain, o3d.geometry.TriangleMesh):
+            area = domain.get_surface_area()
+        else:
+            print(NotImplementedError('Proceeding with projected area'))
+            area = self.projected_area
+        return area
 
-    def _estimate_surface_area(self):
-        pass
+
+    def _step(self, p, rc):
+        ind = self.tree.query_ball_point([p], rc)[0]
+        nbh = self.points[ind]
+        pdn = self.power_density_n[ind]
+        if self.mesh:
+            vind = self.vtree.query_ball_point([p], rc)[0]
+            nbh_mesh = self.mesh.select_by_index(vind, cleanup=True)
+            nbh_mesh = nbh_mesh.subdivide_midpoint(number_of_iterations=1)
+            nbh_vert = np.asarray(nbh_mesh.vertices)
+        
+        # point cloud in the orthonormal basis
+        mu = np.mean(nbh, axis=0)
+        nbht, mapper = self._map(nbh - mu)
+        pt = self._map(p - mu, mapper)
+
+        # bounding box that corresponds to the projected surface
+        bbox, nbh_bbox_ind = self._bound_nbh(nbht, pt)
+        domain = nbht[nbh_bbox_ind, :2]
+        if self.mesh:
+            nbht_vert = self._map(nbh_vert - mu, mapper)
+            vert_bbox_ind = self._bound_mesh(nbht_vert, bbox)
+            domain = nbh_mesh.select_by_index(vert_bbox_ind, cleanup=True)
+        
+        # conformal surface area
+        area = self._estimate_surf_area(domain)
+        
+        # spatially averaged absorbed power density
+        spdn = 1 / area * edblquad(points=nbht[nbh_bbox_ind, :2],
+                                   values=pdn[nbh_bbox_ind],
+                                   bbox=bbox,
+                                   s=1)
+        
+        # capture the rest of the values results
+        nbh = nbh[nbh_bbox_ind]
+        pdn = pdn[nbh_bbox_ind]
+        return nbh, area, domain, pdn, spdn
             
     def find(self, projected_area, **kwargs):
+        """Finds the peak spatially averaged power density on the
+        non-planar surface.
+        
+        Parameters
+        ----------
+        projected_area : float
+            Area of the square projection of the evaluation surface,
+            units should correspond to units of the point cloud.
+        kwargs : dict, optional
+            Additional keyword arguments for
+            `pspd.points.remove_hidden_points` function to restrict the
+            the number of points and subsequently the search space.
+        """
         self.projected_area = projected_area
+        rc = self._query_ball_radius
+        self.tree = spatial.KDTree(self.points)
+        if self.mesh:
+            self.vert = np.asarray(self.mesh.vertices)
+            self.vtree = spatial.KDTree(self.vert)
         if kwargs:  # if exists, iterate only over "visible" set of points
-            ind = remove_hidden_points(self.points, **kwargs)
+            self.ind = remove_hidden_points(self.points, **kwargs)
         else:
-            ind = ...
-        points_vis = self.points[ind].copy()
-        tree = spatial.KDTree(self.points)
+            self.ind = ...
+        self.points_visible = self.points[self.ind]
         self.log.info(f'Execution started at {datetime.datetime.now()}')
         start_time = time.perf_counter()
-        for p in tqdm(points_vis):
-            ind = tree.query_ball_point([p], self.query_ball_radius)[0]
-            nbh = self.points[ind]
-            n = self.normals[ind]
-            pdn = self.power_density_n[ind]
-            
-            # point cloud in the orthonormal basis
-            mu = np.mean(nbh, axis=0)
-            nbht, mapper = self._map(nbh - mu)
-            pt = self._map(p - mu, mapper)
-
-            # bounding box that corresponds to the projected surface
-            bbox, bbox_ind = self._bound_nbh(nbht, pt)
-            
-            # conformal surface area
-            area = self.projected_area
-            # area = self._estimate_surface_area()
-            
-            # spatially averaged absorbed power density
-            spdn = 1 / area * edblquad(points=nbht[bbox_ind, :2],
-                                       values=pdn[bbox_ind],
-                                       bbox=bbox,
-                                       s=1)
-            # capture the rest of the values results
-            nbh = nbh[bbox_ind]
-            n = n[bbox_ind]
-            pdn = pdn[bbox_ind]
-
-            # store the results
+        for p in tqdm(self.points_visible):
+            nbh, area, domain, pdn, spdn = self._step(p, rc)
             self.results['query point'].append(p)
             self.results['k-neigborhood'].append(nbh)
             self.results['surface area'].append(area)
-            self.results['k-mesh'].append(0)
+            self.results['evaluation surface'].append(domain)
             self.results['power density'].append(pdn)
             self.results['spatially averaged power density'].append(spdn)
         elapsed = time.perf_counter() - start_time
         self.log.info(f'Execution finished at {datetime.datetime.now()}')
         self.log.info(f'Elapsed time: {elapsed:.4f} s')
+
+    def get_results(self, peak=True):
+        if peak:
+            peak_results = dict()
+            idx = np.argmax(self.results['spatially averaged power density'])
+            for key in self.results.keys():
+                peak_results[key] = self.results[key][idx]
+            return peak_results
+        return self.results
+    
+    def get_points(self, hidden=False):
+        if hidden:
+            return self.ind, self.points
+        return self.ind, self.points_visible
