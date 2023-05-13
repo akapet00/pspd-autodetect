@@ -1,3 +1,3 @@
 #! /bin/bash
 
-python scale_points.py --scaler 100 --save
+python python/scale_points.py --scaler 100 --save

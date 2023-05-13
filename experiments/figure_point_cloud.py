@@ -18,8 +18,13 @@ mask = np.arange(0, N, int(N/num))
 fig = plt.figure(figsize=(5, 5))
 ax = plt.axes(projection='3d')
 ax.scatter(*points[mask].T,
-           fc='w', ec='k', s=7.5, lw=0.5)
+           fc='w', ec='k', s=7.5, lw=0.5, rasterized=True)
 ax.set_box_aspect(np.ptp(points, axis=0))
 ax.set_axis_off()
 ax.view_init(elev, azim)
 plt.show()
+
+fig.savefig(__file__.strip('.py') + '.pdf',
+            dpi=300,
+            bbox_inches='tight',
+            pad_inches=None)

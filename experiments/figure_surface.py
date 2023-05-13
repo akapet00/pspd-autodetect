@@ -28,3 +28,7 @@ ax.set_box_aspect(np.ptp(points, axis=0))
 ax.set_axis_off()
 ax.view_init(elev, azim)
 plt.show()
+
+fig.savefig(__file__.strip('.py') + '.pdf',
+            bbox_inches='tight',
+            pad_inches=None)

@@ -1,3 +1,3 @@
 #! /bin/bash
 
-python remesh_surface.py --save
+python python/remesh_surface.py --save

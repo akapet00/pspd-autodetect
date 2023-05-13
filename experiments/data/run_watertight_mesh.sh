@@ -1,3 +1,3 @@
 #! /bin/bash
 
-python watertight_mesh.py --save
+python python/watertight_mesh.py --save
