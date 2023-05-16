@@ -9,7 +9,7 @@ from pspd import PSPD
 
 
 # data
-fname = os.path.join('data', 'model', 'head.scaled')
+fname = os.path.join('input', 'data', 'head.scaled')
 points = np.loadtxt(fname + '.xyz') 
 normals = np.loadtxt(fname + '.normals')
 mesh = o3d.io.read_triangle_mesh(fname + '.iso.watertight.off')
@@ -74,5 +74,7 @@ datadict = {'points': points,
             'surface area': area,
             'pspd': spd}
 
-with open(__file__.strip('.py') + '.pkl', 'wb') as handle:
+with open(
+    os.path.join('output', __file__.strip('.py') + '.pkl'), 'wb'
+) as handle:
     pickle.dump(datadict, handle, protocol=pickle.HIGHEST_PROTOCOL)

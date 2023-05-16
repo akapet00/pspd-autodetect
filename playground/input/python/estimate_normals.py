@@ -33,7 +33,7 @@ def main():
     knn = args.k_nearest_neighbors
     method = args.method
     save = args.save
-    fname = os.path.join('model', 'head.scaled')
+    fname = os.path.join('data', 'head.scaled')
     
     # point set loading
     points = Point_set_3(f'{fname}.xyz')

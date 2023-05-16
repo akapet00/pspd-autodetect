@@ -11,17 +11,15 @@ sns.set(style='white', font_scale=1.25,
         rc={'text.usetex' : True, 'font.family': 'serif'})
 
 
-elev, azim = 25, 50
-cmap = sns.color_palette('rocket', as_cmap=True)
+elev, azim = 25, 25
+cmap = sns.color_palette('viridis', as_cmap=True)
 
 # data
-with open('experiment_single_source.pkl', 'rb') as handle:
+with open(
+    os.path.join('output', 'experiment_single_source.pkl'), 'rb'
+) as handle:
     datadict = pickle.load(handle)
 points = datadict['points']
-normals = datadict['normals']
-vert = datadict['vertices']
-tri = datadict['faces']
-colors = datadict['colors']
 pd = datadict['power density']
 ind = datadict['search space indices']
 p = datadict['query point']
@@ -47,10 +45,9 @@ angle_rad = 2 * np.arcsin(d / (2 * r))
 angle = np.rad2deg(angle_rad)
 
 # search space
-plt.close()
 fig = plt.figure(figsize=(5, 5))
 ax = plt.axes(projection='3d')
-s = ax.scatter(*points[ind].T, c=pd[ind], cmap=cmap, s=1, rasterized=True)
+s = ax.scatter(*points[ind].T, c=pd[ind], cmap=cmap, s=0.25, rasterized=True)
 cbar = fig.colorbar(s, ax=ax, pad=0, shrink=0.5,
                     label='power density (W/m$^2$)')
 cbar.set_ticks(cbar_ticks)
@@ -62,12 +59,13 @@ square = Rectangle(xy=(ymin, z_at_ymin),
 ax.add_patch(square)
 pathpatch_2d_to_3d(square, z=p[0], zdir='x')
 ax.set_box_aspect(np.ptp(points[ind], axis=0))
-ax.set(xlabel='x', ylabel='y')
 ax.set_axis_off()
 ax.view_init(elev, azim)
 plt.show()
 
-fig.savefig(__file__.strip('.py') + '.pdf',
-            dpi=300,
-            bbox_inches='tight',
-            pad_inches=None)
+formats = ['png', 'pdf']
+for ext in formats:
+    fig.savefig(os.path.join('figures', f'pspd_single_source.{ext}'),
+                dpi=350,
+                bbox_inches='tight',
+                pad_inches=None)

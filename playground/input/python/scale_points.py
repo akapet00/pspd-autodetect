@@ -21,7 +21,7 @@ def main():
     args = parse_args()
     scaler = args.scaler
     save = args.save
-    fname = os.path.join('model', 'head')
+    fname = os.path.join('data', 'head')
     
     points = np.loadtxt(f'{fname}.xyz')
     points_scaled = points * scaler

@@ -23,7 +23,7 @@ def parse_args():
 def main():
     args = parse_args()
     save = args.save
-    fname = os.path.join('model', 'head.scaled.iso')
+    fname = os.path.join('data', 'head.scaled.iso')
     mesh = o3d.io.read_triangle_mesh(fname + '.off')
     if mesh.is_watertight():
         print('Mesh is watertight. Skipping the execution...')

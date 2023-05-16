@@ -50,7 +50,7 @@ def main():
     args = parse_args()
     method = args.method
     save = args.save
-    fname = os.path.join('model', 'head.scaled')
+    fname = os.path.join('data', 'head.scaled')
     
     if method == 'advancing_front':
         from CGAL.CGAL_Kernel import Point_3

@@ -9,7 +9,7 @@ import open3d as o3d
 elev, azim = 25, 50
 
 # data
-fname = os.path.join('data', 'model', 'head.scaled')
+fname = os.path.join('input', 'data', 'head.scaled')
 points = np.loadtxt(fname + '.xyz')
 normals = np.loadtxt(fname + '.normals')
 mesh = o3d.io.read_triangle_mesh(fname + '.iso.watertight.off')
@@ -29,6 +29,9 @@ ax.set_axis_off()
 ax.view_init(elev, azim)
 plt.show()
 
-fig.savefig(__file__.strip('.py') + '.pdf',
-            bbox_inches='tight',
-            pad_inches=None)
+formats = ['png', 'pdf']
+for ext in formats:
+    fig.savefig(os.path.join('figures', f'surface.{ext}'),
+                dpi=350,
+                bbox_inches='tight',
+                pad_inches=None)

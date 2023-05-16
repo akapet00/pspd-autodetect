@@ -23,7 +23,7 @@ def main():
     args = parse_args()
     edge_len = args.target_edge_length
     save = args.save
-    fname = os.path.join('model', 'head.scaled')
+    fname = os.path.join('data', 'head.scaled')
     
     polyhedron = Polyhedron_3(f'{fname}.off')
     facets = []
