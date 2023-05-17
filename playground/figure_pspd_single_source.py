@@ -11,7 +11,6 @@ sns.set(style='white', font_scale=1.25,
         rc={'text.usetex' : True, 'font.family': 'serif'})
 
 
-elev, azim = 25, 25
 cmap = sns.color_palette('viridis', as_cmap=True)
 
 # data
@@ -60,12 +59,50 @@ ax.add_patch(square)
 pathpatch_2d_to_3d(square, z=p[0], zdir='x')
 ax.set_box_aspect(np.ptp(points[ind], axis=0))
 ax.set_axis_off()
-ax.view_init(elev, azim)
-plt.show()
+ax.view_init(25, 25)
 
 formats = ['png', 'pdf']
 for ext in formats:
-    fig.savefig(os.path.join('figures', f'pspd_single_source.{ext}'),
-                dpi=350,
+    fig.savefig(os.path.join('figures', f'pspd_single_source_1.{ext}'),
+                dpi=300,
                 bbox_inches='tight',
+                pad_inches=None)
+
+# hot-spot region, zoom in
+fig = plt.figure(figsize=(5, 5))
+ax = plt.axes(projection='3d')
+ax.scatter(*np.delete(nbh, np.where((nbh==p).all(axis=1))[0], axis=0).T,
+           s=7.5, fc='white', ec='k', lw=0.5, rasterized=True)
+ax.scatter(*p, s=15, fc='r', ec='k', lw=1, rasterized=True)
+square = Rectangle(xy=(ymin, z_at_ymin - 0.15 * z_at_ymin),
+                   width=np.sqrt(area),
+                   height=np.sqrt(area),
+                   angle=-angle,
+                   ec='k', fc='none', lw=1.5, zorder=5)
+ax.add_patch(square)
+pathpatch_2d_to_3d(square, z=nbh[:, 0].max(), zdir='x')
+ax.set_box_aspect(np.ptp(nbh, axis=0))
+ax.set(xlabel='',
+       ylabel='$y$ (mm)',
+       zlabel='$z$ (mm)',
+       xticks=[],
+       yticks=[-4.4, -3.2, -2.0],
+       zticks=[-3.1, -1.8, -.5],
+       yticklabels=[-44, -32, -20],
+       zticklabels=[-31, -18, -5])
+ax.xaxis.labelpad = 0
+ax.yaxis.labelpad = 15
+ax.zaxis.labelpad = 15
+ax.xaxis.pane.fill = False
+ax.yaxis.pane.fill = False
+ax.zaxis.pane.fill = False
+ax.xaxis.pane.set_edgecolor('w')
+ax.yaxis.pane.set_edgecolor('w')
+ax.zaxis.pane.set_edgecolor('w')
+ax.view_init(5, -15)
+
+formats = ['png', 'pdf']
+for ext in formats:
+    fig.savefig(os.path.join('figures', f'pspd_single_source_2.{ext}'),
+                dpi=300,
                 pad_inches=None)

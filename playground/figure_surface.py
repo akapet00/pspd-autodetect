@@ -32,6 +32,6 @@ plt.show()
 formats = ['png', 'pdf']
 for ext in formats:
     fig.savefig(os.path.join('figures', f'surface.{ext}'),
-                dpi=350,
+                dpi=300,
                 bbox_inches='tight',
                 pad_inches=None)

@@ -49,9 +49,3 @@ ax.view_init(elev, azim)
 plt.show()
 
 
-formats = ['png', 'pdf']
-for ext in formats:
-    fig.savefig(os.path.join('figures', f'point_cloud.{ext}'),
-                dpi=300,
-                bbox_inches='tight',
-                pad_inches=None)
