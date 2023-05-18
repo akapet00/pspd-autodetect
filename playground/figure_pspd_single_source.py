@@ -16,7 +16,7 @@ cmap = sns.color_palette('viridis', as_cmap=True)
 # data
 with open(
     os.path.join('output', 'experiment_single_source.pkl'), 'rb'
-) as handle:
+    ) as handle:
     datadict = pickle.load(handle)
 points = datadict['points']
 pd = datadict['power density']
