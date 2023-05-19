@@ -1,5 +1,7 @@
 import datetime
+import sys
 import logging
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 import time
 
 import numpy as np
@@ -58,16 +60,22 @@ class PSPD(object):
         if isinstance(mesh, o3d.geometry.TriangleMesh):
             self.mesh = mesh
         else:
-            print('Unrecognized mesh format. Proceeding without mesh')
+            self.log.info('Unrecognized mesh; proceeding without it...')
             self.mesh = None
 
         # handle normals
         if (normals is None) & (self.mesh is None):
-            self.log.info(f'Estimating normals...')
+            k = self._k
+            self.log.info(f'Estimating normals with k-nn = {k}...')
+            self.log.info(f'Execution started at {datetime.datetime.now()}')
+            start_time = time.perf_counter()
             normals = estimate_normals(points,
-                                       self._k,
+                                       k,
                                        unit=False,
                                        orient=True)
+            elapsed = time.perf_counter() - start_time
+            self.log.info(f'Execution finished at {datetime.datetime.now()}')
+            self.log.info(f'Elapsed time: {elapsed:.4f} s')
         self.normals = normals
 
         # handle absorbed or incident power density on the surface
@@ -77,11 +85,16 @@ class PSPD(object):
         elif power_density.ndim == 2:  # unoriented
             if power_density.shape[1] == 3:
                 if self.normals is None:
-                    self.log.info(f'Estimating normals...')
+                    k = self._k
+                    self.log.info(f'Estimating normals with k-nn = {k}...')
+                    self.log.info(f'Execution started at {datetime.datetime.now()}')
                     normals = estimate_normals(points,
-                                               self._k,
+                                               k,
                                                unit=False,
                                                orient=True)
+                    elapsed = time.perf_counter() - start_time
+                    self.log.info(f'Execution finished at {datetime.datetime.now()}')
+                    self.log.info(f'Elapsed time: {elapsed:.4f} s')
                     self.normals = normals
                 self.power_density_n = np.sum(
                     np.real(power_density) * self.normals,
@@ -158,7 +171,8 @@ class PSPD(object):
 
     def _estimate_surf_area(self, domain):
         if isinstance(domain, np.ndarray):
-            area = self.projected_area  # to be implemented
+            area = self.projected_area  # this is faster, but not accurate
+            area = edblquad(domain[:, :2], domain[:, 2])
         elif isinstance(domain, o3d.geometry.TriangleMesh):
             area = domain.get_surface_area()
         else:
@@ -176,6 +190,8 @@ class PSPD(object):
             nbh_mesh = self.mesh.select_by_index(vind, cleanup=True)
             nbh_mesh = nbh_mesh.subdivide_midpoint(number_of_iterations=1)
             nbh_vert = np.asarray(nbh_mesh.vertices)
+        else:  # use surface normals for surface area estimation
+            n = self.normals[ind]
         
         # point cloud in the orthonormal basis
         mu = np.mean(nbh, axis=0)
@@ -184,11 +200,13 @@ class PSPD(object):
 
         # bounding box that corresponds to the projected surface
         bbox, nbh_bbox_ind = self._bound_nbh(nbht, pt)
-        domain = nbht[nbh_bbox_ind, :2]
         if self.mesh:
             nbht_vert = self._map(nbh_vert - mu, mapper)
             vert_bbox_ind = self._bound_mesh(nbht_vert, bbox)
             domain = nbh_mesh.select_by_index(vert_bbox_ind, cleanup=True)
+        else:  # if mesh is not provided, domain is the local point cloud
+            domain = nbht[nbh_bbox_ind, :2]
+            domain = np.c_[domain, n[nbh_bbox_ind]]  # append surface normals
         
         # conformal surface area
         area = self._estimate_surf_area(domain)
