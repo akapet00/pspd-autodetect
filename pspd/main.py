@@ -10,8 +10,7 @@ try:
 except ModuleNotFoundError as e:
     print(e, 'install it before proceeding', sep=', ')
 else:
-    pass
-    # o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel(0))
+	o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel(0))
 from scipy import spatial
 from tqdm.auto import tqdm
 
