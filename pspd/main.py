@@ -171,12 +171,11 @@ class PSPD(object):
 
     def _estimate_surf_area(self, domain):
         if isinstance(domain, np.ndarray):
-            area = self.projected_area  # this is faster, but not accurate
             area = edblquad(domain[:, :2], domain[:, 2])
         elif isinstance(domain, o3d.geometry.TriangleMesh):
             area = domain.get_surface_area()
         else:
-            print(NotImplementedError('Proceeding with projected area'))
+            print(NotImplementedError('Proceeding with the projected area'))
             area = self.projected_area
         return area
 
