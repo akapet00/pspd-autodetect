@@ -170,7 +170,8 @@ class PSPD(object):
 
     def _estimate_surf_area(self, domain):
         if isinstance(domain, np.ndarray):
-            area = edblquad(domain[:, :2], domain[:, 2])
+            area = edblquad(domain[:, :2],
+            				np.linalg.norm(domain[:, 2:], axis=1))
         elif isinstance(domain, o3d.geometry.TriangleMesh):
             area = domain.get_surface_area()
         else:
