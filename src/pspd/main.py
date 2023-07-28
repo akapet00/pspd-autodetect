@@ -87,6 +87,7 @@ class PSPD(object):
                     k = self._k
                     self.log.info(f'Estimating normals with k-nn = {k}...')
                     self.log.info(f'Execution started at {datetime.datetime.now()}')
+                    start_time = time.perf_counter()
                     normals = estimate_normals(points,
                                                k,
                                                unit=False,
