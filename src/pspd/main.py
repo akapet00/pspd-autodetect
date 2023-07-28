@@ -75,7 +75,7 @@ class PSPD(object):
             elapsed = time.perf_counter() - start_time
             self.log.info(f'Execution finished at {datetime.datetime.now()}')
             self.log.info(f'Elapsed time: {elapsed:.4f} s')
-        self.normals = normals
+        self.normals = normals * -1  # inward orientation
 
         # handle absorbed or incident power density on the surface
         assert power_density.shape[0] == self.size, 'Size missmatch'
@@ -95,7 +95,7 @@ class PSPD(object):
                     elapsed = time.perf_counter() - start_time
                     self.log.info(f'Execution finished at {datetime.datetime.now()}')
                     self.log.info(f'Elapsed time: {elapsed:.4f} s')
-                    self.normals = normals
+                    self.normals = normals * -1  # inward orientation
                 self.power_density_n = np.sum(
                     np.real(power_density) * self.normals,
                     axis=1,
