@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "pspd"
 version = "0.0.1"
-authors = [{name = "Ante Kapetanović", email = "akape00@gmail.com"}]
+authors = [{name = "Ante Kapetanović", email = "akapet00@gmail.com"}]
 description = "Automatic detection of the peak spatial power density"
 keywords = [
     "point cloud",
