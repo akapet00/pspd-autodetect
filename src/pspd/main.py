@@ -109,7 +109,8 @@ class PSPD(object):
         
         # dictionary for the results
         self.results = {'query point': [], 
-                        'k-neigborhood': [],
+                        'k-neighbourhood': [],
+                        'k-neighbourhood normals': [],
                         'evaluation surface': [],
                         'surface area': [],
                         'power density': [],
@@ -184,6 +185,7 @@ class PSPD(object):
     def _step(self, p, rc):
         ind = self.tree.query_ball_point([p], rc)[0]
         nbh = self.points[ind]
+        n = self.normals[ind]
         pdn = self.power_density_n[ind]
         if self.mesh:
             vind = self.vtree.query_ball_point([p], rc)[0]
@@ -191,7 +193,7 @@ class PSPD(object):
             nbh_mesh = nbh_mesh.subdivide_midpoint(number_of_iterations=1)
             nbh_vert = np.asarray(nbh_mesh.vertices)
         else:  # use surface normals for surface area estimation
-            n = self.normals[ind]
+            pass
         
         # point cloud in the orthonormal basis
         mu = np.mean(nbh, axis=0)
@@ -216,11 +218,7 @@ class PSPD(object):
                                    values=pdn[nbh_bbox_ind],
                                    bbox=bbox,
                                    s=1)
-        
-        # capture the rest of the values results
-        nbh = nbh[nbh_bbox_ind]
-        pdn = pdn[nbh_bbox_ind]
-        return nbh, area, domain, pdn, spdn
+        return nbh[nbh_bbox_ind], n[nbh_bbox_ind], area, domain, pdn[nbh_bbox_ind], spdn
             
     def find(self, projected_area, **kwargs):
         """Finds the peak spatially averaged power density on the
@@ -250,9 +248,10 @@ class PSPD(object):
         self.log.info(f'Execution started at {datetime.datetime.now()}')
         start_time = time.perf_counter()
         for p in tqdm(self.points_visible):
-            nbh, area, domain, pdn, spdn = self._step(p, rc)
+            nbh, n, area, domain, pdn, spdn = self._step(p, rc)
             self.results['query point'].append(p)
-            self.results['k-neigborhood'].append(nbh)
+            self.results['k-neighbourhood'].append(nbh)
+            self.results['k-neighbourhood normals'].append(n)
             self.results['surface area'].append(area)
             self.results['evaluation surface'].append(domain)
             self.results['power density'].append(pdn)
