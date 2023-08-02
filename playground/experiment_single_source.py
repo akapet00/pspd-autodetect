@@ -48,7 +48,7 @@ def main():
     ind, _ = pspd.get_points()
     res = pspd.get_results()
     p = res['query point']
-    nbh = res['k-neigborhood']
+    nbh = res['k-neighbourhood']
     area = res['surface area']
     spd = res['spatially averaged power density']
 
