@@ -10,9 +10,8 @@ This paper presents a novel algorithm for the automatic detection of the peak sp
 
 tba
 
-## Reproduce the results
 
-### Install
+## Install
 
 Clone this repository to your local machine:
 ```bash
@@ -23,23 +22,24 @@ Enter the repository:
 ```bash
 cd pspd-autodetect
 ```
-Install `pspd` preferably within a virtual environment, e.g., by using `conda`:
+Install `pspd` preferably within a virtual environment, e.g., by using [Conda](https://www.anaconda.com/download):
 ```bash
 conda create --name pspd python=3.9
 pip install --upgrade pip
 python -m pip install .
 ```
 
-### Use
+## Use
 
 ```python
 from pspd import PSPD
 
+
 # load data
-points = ...            # required
-normals = ...           # optional
-power_density = ...     # required
-mesh = ...              # optional
+points = ...            # required, N-by-3 `numpy.ndarray`
+power_density = ...     # required, N-by-1 or N-by-3 `numpy.ndarray`
+normals = ...           # optional, N-by-3 `numpy.ndarray`
+mesh = ...              # optional, `open3d.geometry.TriangleMesh`
 
 # create the peak-spatial power density instance
 pspd = PSPD(points, power_density,
@@ -47,7 +47,7 @@ pspd = PSPD(points, power_density,
             mesh=mesh)
 
 # define the projected area size
-area = ...              # unit should correspond to unit of points
+area = ...              # the area unit should match the unit of points
 
 # run the search algorithm
 pspd.find(area)
@@ -56,28 +56,30 @@ pspd.find(area)
 res = pspd.get_results()
 ```
 
+## Reproduce the results
+
 ### Experiments
 
-To reproduce the results go to `playground` directory
+To reproduce the results go to [`playground`](https://github.com/akapet00/pspd-autodetect/tree/main/playground) directory
 ```bash
 cd playground
 ```
 
 #### Input data
 
-The input data are available in the `input` directory. Five Bash scripts are available in it. These scripts contain the commands for running Python files inside the `python` directory. These files are used in order to obtain the following input data:
-* `head.xyz` - original point cloud sampled on the surface of the realistic head model, in meters
-* `head.scaled.xyz` - scaled version of the original point cloud, in centimeters
-* `head.scaled.normals` - estimated surface normals on the scaled point cloud
-* `head.scaled.off` - triangle mesh representing the reconstructed surface
-* `head.scaled.iso.off` - remashed surface
-* `head.scaled.iso.watertight.off` - watertight remashed surface
+The input data are available in the [`input`](https://github.com/akapet00/pspd-autodetect/tree/main/playground/input) directory. Five Bash scripts are available in it. These scripts contain the commands for running Python files inside the [`python`](https://github.com/akapet00/pspd-autodetect/tree/main/playground/input/python) directory. These files are used in order to obtain the following input data:
+* `head.xyz` - original point cloud sampled on the surface of the realistic head model, in meters,
+* `head.scaled.xyz` - scaled version of the original point cloud, in centimeters,
+* `head.scaled.normals` - estimated surface normals on the scaled point cloud,
+* `head.scaled.off` - triangle mesh representing the reconstructed surface,
+* `head.scaled.iso.off` - remashed surface and
+* `head.scaled.iso.watertight.off` - watertight remashed surface.
 
 #### Executables
 
-To get the gist of how the code actually works, try playing with the code available in the `tutorial.ipynb` notebook.
+To get the gist of how the code actually works, try playing with the code available in the [`tutorial.ipynb`](https://github.com/akapet00/pspd-autodetect/blob/main/tutorial.ipynb) notebook.
 
-Within `playground` there are various Python files available. The main file is `experiment_single_source.py`, where the power density is evaluated in a Gaussian pattern over the head surface. Furthermore, the peak spatial-average power density detection algorithm is used to find the worst-case exposure scenario considering a 4 squared centimeters averaging area (as defined in the ICNIRP guidelines for limiting exposure to electromagnetic fields up to 300 GHz and IEEE standard for safety levels with respect to human exposure to electric, magnetic, and electromagnetic fields). All results are pickled and stored inside the `output` directory.
+Within [`playground`](https://github.com/akapet00/pspd-autodetect/tree/main/playground), there are various Python files available. The main file is [`experiment_single_source.py`](https://github.com/akapet00/pspd-autodetect/blob/main/playground/experiment_single_source.py), where the power density is evaluated in a Gaussian pattern over the head surface. Furthermore, the peak spatial-average power density detection algorithm is used to find the worst-case exposure scenario considering a 4 squared centimeters averaging area (as defined in the ICNIRP guidelines for limiting exposure to electromagnetic fields up to 300 GHz and IEEE standard for safety levels with respect to human exposure to electric, magnetic, and electromagnetic fields). All results are pickled and stored inside the [`output`](https://github.com/akapet00/pspd-autodetect/tree/main/playground/output) directory.
 
 Python files whose name start with `figure_` are used to generate a (part of the) figure provided in the paper.
 Running these files is as simple as:
