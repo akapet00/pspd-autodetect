@@ -8,8 +8,15 @@ This paper presents a novel algorithm for the automatic detection of the peak sp
 
 ## Citation
 
-tba
-
+```bibtex
+@inproceedings{Kapetanovic2023Automatic,
+    author={Kapetanović, Ante and Poljak, Dragan and Dodig, Hrvoje},
+    title={Automatic Detection of Peak Spatial-Average Power Density on Nonplanar Body Models}, 
+    year={2023},
+    booktitle={2023 International Conference on Software, Telecommunications and Computer Networks (SoftCOM)}, 
+    doi={10.23919/SoftCOM58365.2023.10271620}
+}
+```
 
 ## Install
 
